@@ -87,7 +87,8 @@ const Navbar = () => {
       boxShadow: '0 6px 0 var(--nes-black)',
       position: 'sticky',
       top: 0,
-      zIndex: 1000
+      zIndex: 1000,
+      overflow: 'visible'
     }}>
       
       {/* Upper Navigation Row */}
