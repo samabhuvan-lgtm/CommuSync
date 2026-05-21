@@ -1,8 +1,34 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-const dbPath = path.resolve(__dirname, 'campussync.db');
+let dbPath;
+if (process.env.VERCEL) {
+  // On Vercel, we must write to /tmp as the root folder is read-only
+  dbPath = '/tmp/campussync.db';
+  
+  // If the database does not exist in /tmp, copy the seeded/empty database from project directory
+  if (!fs.existsSync(dbPath)) {
+    const srcPath = path.resolve(__dirname, 'campussync.db');
+    try {
+      if (fs.existsSync(srcPath)) {
+        fs.copyFileSync(srcPath, dbPath);
+        console.log('Database copied to /tmp successfully');
+      } else {
+        console.log('No source database found to copy, a new empty database will be created in /tmp');
+      }
+    } catch (e) {
+      console.error('Failed to copy database to /tmp:', e);
+    }
+  } else {
+    console.log('Database already exists in /tmp');
+  }
+} else {
+  // Local development
+  dbPath = path.resolve(__dirname, 'campussync.db');
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening SQLite database:', err.message);
