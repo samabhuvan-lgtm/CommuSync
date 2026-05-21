@@ -1,4 +1,3 @@
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
@@ -64,53 +63,150 @@ const readyPromise = new Promise((resolve) => {
   resolveReady = resolve;
 });
 
-const db = new sqlite3.Database(dbPath, async (err) => {
-  if (err) {
-    console.error('Error opening SQLite database:', err.message);
-    resolveReady();
-  } else {
-    console.log('Connected to the SQLite database at:', dbPath);
-    db.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
-      if (pragmaErr) console.error('Error enabling foreign keys:', pragmaErr);
-    });
+// The exported database interface delegating to either sqlite3 or sql.js
+const db = {
+  ready: readyPromise,
+  runAsync: function (sql, params = []) {
+    return activeDb.runAsync(sql, params);
+  },
+  allAsync: function (sql, params = []) {
+    return activeDb.allAsync(sql, params);
+  },
+  getAsync: function (sql, params = []) {
+    return activeDb.getAsync(sql, params);
+  }
+};
+
+let activeDb;
+
+// Check if we should use WebAssembly sql.js (if on Vercel)
+const useSqlJs = !!process.env.VERCEL;
+
+if (useSqlJs) {
+  console.log('Initializing SQLite database using sql.js WebAssembly (Vercel safe)');
+  const initSqlJs = require('sql.js');
+  
+  initSqlJs().then(async (SQL) => {
+    let dbBuffer;
+    if (fs.existsSync(dbPath)) {
+      dbBuffer = fs.readFileSync(dbPath);
+    } else {
+      dbBuffer = Buffer.alloc(0);
+    }
+    
+    const sqljsDb = new SQL.Database(dbBuffer);
+    
+    const saveToFile = function () {
+      try {
+        const data = sqljsDb.export();
+        const buffer = Buffer.from(data);
+        fs.writeFileSync(dbPath, buffer);
+      } catch (err) {
+        console.error('Failed to write database file:', err);
+      }
+    };
+    
+    activeDb = {
+      runAsync: async function (sql, params = []) {
+        const stmt = sqljsDb.prepare(sql);
+        stmt.bind(params);
+        stmt.step();
+        stmt.free();
+        
+        saveToFile();
+        
+        const lastInsertIdRes = sqljsDb.exec("SELECT last_insert_rowid() AS id;");
+        const lastID = lastInsertIdRes[0] && lastInsertIdRes[0].values[0] ? lastInsertIdRes[0].values[0][0] : undefined;
+        const changesRes = sqljsDb.exec("SELECT changes() AS count;");
+        const changes = changesRes[0] && changesRes[0].values[0] ? changesRes[0].values[0][0] : 0;
+        
+        return { lastID, changes };
+      },
+      
+      allAsync: async function (sql, params = []) {
+        const stmt = sqljsDb.prepare(sql);
+        stmt.bind(params);
+        const rows = [];
+        while (stmt.step()) {
+          rows.push(stmt.getAsObject());
+        }
+        stmt.free();
+        return rows;
+      },
+      
+      getAsync: async function (sql, params = []) {
+        const stmt = sqljsDb.prepare(sql);
+        stmt.bind(params);
+        let row = undefined;
+        if (stmt.step()) {
+          row = stmt.getAsObject();
+        }
+        stmt.free();
+        return row;
+      }
+    };
+    
     try {
       await initializeTables();
     } catch (initErr) {
-      console.error('Error initializing tables:', initErr);
+      console.error('Error initializing tables (sql.js):', initErr);
     }
     resolveReady();
-  }
-});
-
-db.ready = readyPromise;
-
-// Helper promise wrapper for running queries
-db.runAsync = function (sql, params = []) {
-  return new Promise((resolve, reject) => {
-    this.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this); // 'this' contains lastID and changes
-    });
+  }).catch((err) => {
+    console.error('Failed to initialize sql.js:', err);
+    resolveReady();
   });
-};
-
-db.allAsync = function (sql, params = []) {
-  return new Promise((resolve, reject) => {
-    this.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
+} else {
+  // Use standard native sqlite3 for local development
+  const sqlite3 = require('sqlite3').verbose();
+  
+  const sqliteDb = new sqlite3.Database(dbPath, async (err) => {
+    if (err) {
+      console.error('Error opening SQLite database:', err.message);
+      resolveReady();
+    } else {
+      console.log('Connected to the SQLite database at:', dbPath);
+      sqliteDb.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
+        if (pragmaErr) console.error('Error enabling foreign keys:', pragmaErr);
+      });
+      try {
+        await initializeTables();
+      } catch (initErr) {
+        console.error('Error initializing tables:', initErr);
+      }
+      resolveReady();
+    }
   });
-};
-
-db.getAsync = function (sql, params = []) {
-  return new Promise((resolve, reject) => {
-    this.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-};
+  
+  activeDb = {
+    runAsync: function (sql, params = []) {
+      return new Promise((resolve, reject) => {
+        sqliteDb.run(sql, params, function (err) {
+          if (err) reject(err);
+          else resolve(this); // 'this' contains lastID and changes
+        });
+      });
+    },
+    
+    allAsync: function (sql, params = []) {
+      return new Promise((resolve, reject) => {
+        sqliteDb.all(sql, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+    },
+    
+    getAsync: function (sql, params = []) {
+      return new Promise((resolve, reject) => {
+        sqliteDb.get(sql, params, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+    }
+  };
+}
 
 async function initializeTables() {
   try {
