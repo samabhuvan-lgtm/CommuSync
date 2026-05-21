@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import LoadingScreen from '../components/LoadingScreen';
 import io from 'socket.io-client';
+import { API_BASE, SOCKET_URL, SOCKET_OPTIONS } from '../config';
 import { 
   Users, MessageCircle, Send, Star, Zap, UserPlus, Check, X, 
   UserCheck, Shield, Sparkles, BookOpen, Clock, Heart, Award
@@ -50,7 +51,7 @@ const SocialHub = () => {
       const headers = { 'Authorization': `Bearer ${token}` };
       
       // 1. Fetch matching profiles
-      const matchRes = await fetch('http://localhost:5001/api/matching', { headers });
+      const matchRes = await fetch(`${API_BASE}/api/matching`, { headers });
       if (matchRes.ok) {
         const matchesData = await matchRes.json();
         setBestStudyBuddies(matchesData.bestStudyBuddies);
@@ -67,14 +68,14 @@ const SocialHub = () => {
       }
 
       // 2. Fetch friends
-      const friendsRes = await fetch('http://localhost:5001/api/social/friends', { headers });
+      const friendsRes = await fetch(`${API_BASE}/api/social/friends`, { headers });
       if (friendsRes.ok) {
         const friendsData = await friendsRes.json();
         setFriends(friendsData);
       }
 
       // 3. Fetch pending requests
-      const pendingRes = await fetch('http://localhost:5001/api/social/pending-requests', { headers });
+      const pendingRes = await fetch(`${API_BASE}/api/social/pending-requests`, { headers });
       if (pendingRes.ok) {
         const pendingData = await pendingRes.json();
         setPendingReceived(pendingData.received);
@@ -82,7 +83,7 @@ const SocialHub = () => {
       }
 
       // 4. Fetch group suggestions
-      const groupsRes = await fetch('http://localhost:5001/api/social/groups', { headers });
+      const groupsRes = await fetch(`${API_BASE}/api/social/groups`, { headers });
       if (groupsRes.ok) {
         const groupsData = await groupsRes.json();
         setStudyGroups(groupsData);
@@ -103,8 +104,8 @@ const SocialHub = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Connect to local Node Socket.io server
-    socketRef.current = io('http://localhost:5001');
+    // Connect to Socket.io server
+    socketRef.current = io(SOCKET_URL, SOCKET_OPTIONS);
 
     // Identify user
     socketRef.current.emit('identify', user.id);
@@ -159,7 +160,7 @@ const SocialHub = () => {
     setActiveTab('friends'); // Switch tab to friends view to show chat
 
     try {
-      const response = await fetch(`http://localhost:5001/api/social/chats/${friend.id}`, {
+      const response = await fetch(`${API_BASE}/api/social/chats/${friend.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -180,7 +181,7 @@ const SocialHub = () => {
     socketRef.current?.emit('join_group', group.id);
 
     try {
-      const response = await fetch(`http://localhost:5001/api/social/groups/${group.id}/chats`, {
+      const response = await fetch(`${API_BASE}/api/social/groups/${group.id}/chats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -222,7 +223,7 @@ const SocialHub = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:5001/api/social/groups', {
+      const response = await fetch(`${API_BASE}/api/social/groups`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name: newGroupName, memberIds: [...selectedFriendsForGroup, user.id] })
@@ -244,7 +245,7 @@ const SocialHub = () => {
   // Send Friend Request
   const handleSendFriendRequest = async (receiverId) => {
     try {
-      const response = await fetch('http://localhost:5001/api/social/friend-request', {
+      const response = await fetch(`${API_BASE}/api/social/friend-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -268,7 +269,7 @@ const SocialHub = () => {
   // Accept/Decline Friend Request
   const handleResponseFriendRequest = async (friendshipId, action) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/social/friend-request/${friendshipId}`, {
+      const response = await fetch(`${API_BASE}/api/social/friend-request/${friendshipId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

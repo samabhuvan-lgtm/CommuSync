@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
@@ -43,7 +44,7 @@ const PsychometricTest = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/psychometric/questions');
+        const response = await fetch(`${API_BASE}/api/psychometric/questions`);
         if (response.ok) {
           const data = await response.json();
           setQuestions(data);
@@ -91,7 +92,7 @@ const PsychometricTest = () => {
 
     setSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5001/api/psychometric/submit', {
+      const response = await fetch(`${API_BASE}/api/psychometric/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

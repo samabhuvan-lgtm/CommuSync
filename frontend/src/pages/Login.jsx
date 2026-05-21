@@ -125,16 +125,6 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Quick Sandbox Account Tips */}
-          <div style={{ marginTop: '1.2rem', padding: '0.8rem', backgroundColor: '#f9f9f9', border: '2px dashed #ccc', borderRadius: '6px', fontSize: '0.8rem', color: '#666', textAlign: 'left' }}>
-            <span style={{ fontWeight: 'bold' }}>🎮 Quick Seed Logins (Password: password123):</span>
-            <div style={{ marginTop: '4px' }}>
-              • mario@mku.edu (Computer Science)<br/>
-              • peach@mku.edu (Business)<br/>
-              • yoshi@mku.edu (Biology)
-            </div>
-          </div>
-
           <hr style={{ margin: '1.5rem 0', border: 'none', borderTop: '2px dashed #ccc' }} />
 
           <p style={{ fontSize: '0.9rem', color: '#555' }}>

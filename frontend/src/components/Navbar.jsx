@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { API_BASE } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Calendar, Users, Home, Award, ChevronDown } from 'lucide-react';
 
@@ -43,7 +44,7 @@ const Navbar = () => {
 
   const handleAvatarChange = async (avatarId) => {
     try {
-      const response = await fetch('http://localhost:5001/api/auth/profile', {
+      const response = await fetch(`${API_BASE}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

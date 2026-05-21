@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -69,7 +70,7 @@ const Dashboard = () => {
         const headers = { 'Authorization': `Bearer ${token}` };
         
         // 1. Fetch schedules
-        const schedRes = await fetch('http://localhost:5001/api/schedules', { headers });
+        const schedRes = await fetch(`${API_BASE}/api/schedules`, { headers });
         let schedData = [];
         if (schedRes.ok) {
           schedData = await schedRes.json();
@@ -79,7 +80,7 @@ const Dashboard = () => {
         // 2. Fetch matches (if test completed)
         let matchesData = { allMatches: [] };
         if (user.hasCompletedTest) {
-          const matchRes = await fetch('http://localhost:5001/api/matching', { headers });
+          const matchRes = await fetch(`${API_BASE}/api/matching`, { headers });
           if (matchRes.ok) {
             matchesData = await matchRes.json();
             setMatches(matchesData.allMatches.slice(0, 5)); // Grab top 5 for stories

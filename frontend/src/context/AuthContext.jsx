@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { API_BASE } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const response = await fetch('http://localhost:5001/api/auth/me', {
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
   // Login handler
   const login = async (email, password) => {
-    const response = await fetch('http://localhost:5001/api/auth/login', {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -64,7 +65,7 @@ export const AuthProvider = ({ children }) => {
 
   // Register handler
   const register = async (userData) => {
-    const response = await fetch('http://localhost:5001/api/auth/register', {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -96,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     if (!token) return;
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/reward', {
+      const response = await fetch(`${API_BASE}/api/auth/reward`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ export const AuthProvider = ({ children }) => {
   const syncProfile = async () => {
     if (!token) return;
     try {
-      const response = await fetch('http://localhost:5001/api/auth/me', {
+      const response = await fetch(`${API_BASE}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

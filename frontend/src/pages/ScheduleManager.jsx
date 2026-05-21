@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import LoadingScreen from '../components/LoadingScreen';
@@ -44,7 +45,7 @@ const ScheduleManager = () => {
 
   const fetchSchedules = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/schedules', {
+      const response = await fetch(`${API_BASE}/api/schedules`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -110,7 +111,7 @@ const ScheduleManager = () => {
     };
 
     try {
-      let url = 'http://localhost:5001/api/schedules';
+      let url = `${API_BASE}/api/schedules`;
       let method = 'POST';
 
       if (editingId) {
@@ -154,7 +155,7 @@ const ScheduleManager = () => {
 
     setError('');
     try {
-      const response = await fetch(`http://localhost:5001/api/schedules/${editingId}`, {
+      const response = await fetch(`${API_BASE}/api/schedules/${editingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
