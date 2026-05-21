@@ -4,7 +4,37 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 let dbPath;
-if (process.env.VERCEL) {
+if (process.env.DATABASE_PATH) {
+  // Use a custom database path, e.g., on Render or Railway persistent volumes
+  dbPath = process.env.DATABASE_PATH;
+  
+  // Ensure the target directory exists
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+    } catch (mkdirErr) {
+      console.error(`Failed to create directory for database at ${dbDir}:`, mkdirErr);
+    }
+  }
+
+  // If the database does not exist, copy the seeded/empty database from project directory
+  if (!fs.existsSync(dbPath)) {
+    const srcPath = path.resolve(__dirname, 'campussync.db');
+    try {
+      if (fs.existsSync(srcPath)) {
+        fs.copyFileSync(srcPath, dbPath);
+        console.log(`Database copied to custom path ${dbPath} successfully`);
+      } else {
+        console.log('No source database found to copy, a new empty database will be created at:', dbPath);
+      }
+    } catch (e) {
+      console.error(`Failed to copy database to ${dbPath}:`, e);
+    }
+  } else {
+    console.log(`Database already exists at custom path ${dbPath}`);
+  }
+} else if (process.env.VERCEL) {
   // On Vercel, we must write to /tmp as the root folder is read-only
   dbPath = '/tmp/campussync.db';
   
@@ -51,6 +81,8 @@ const db = new sqlite3.Database(dbPath, async (err) => {
     resolveReady();
   }
 });
+
+db.ready = readyPromise;
 
 // Helper promise wrapper for running queries
 db.runAsync = function (sql, params = []) {
