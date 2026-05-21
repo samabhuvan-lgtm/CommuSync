@@ -132,7 +132,11 @@ router.post('/register', async (req, res) => {
 
   } catch (error) {
     console.error('Error registering student:', error);
-    res.status(500).json({ error: 'Server error during student registration.' });
+    res.status(500).json({ 
+      error: 'Server error during student registration.',
+      details: error.message,
+      stack: error.stack
+    });
   }
 });
 
@@ -186,7 +190,11 @@ router.post('/login', async (req, res) => {
 
   } catch (error) {
     console.error('Error logging in student:', error);
-    res.status(500).json({ error: 'Server error during student login.' });
+    res.status(500).json({ 
+      error: 'Server error during student login.',
+      details: error.message,
+      stack: error.stack
+    });
   }
 });
 

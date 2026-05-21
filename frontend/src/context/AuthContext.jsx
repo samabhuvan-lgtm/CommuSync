@@ -54,7 +54,10 @@ export const AuthProvider = ({ children }) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to login');
+      const errorMsg = data.details 
+        ? `${data.error} Details: ${data.details}` 
+        : (data.error || 'Failed to login');
+      throw new Error(errorMsg);
     }
 
     localStorage.setItem('campussync_token', data.token);
@@ -76,7 +79,10 @@ export const AuthProvider = ({ children }) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to register');
+      const errorMsg = data.details 
+        ? `${data.error} Details: ${data.details}` 
+        : (data.error || 'Failed to register');
+      throw new Error(errorMsg);
     }
 
     localStorage.setItem('campussync_token', data.token);

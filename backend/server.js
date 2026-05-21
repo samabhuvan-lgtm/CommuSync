@@ -28,6 +28,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Wait for database connection and table initialization
+app.use(async (req, res, next) => {
+  try {
+    if (db.ready) {
+      await db.ready;
+    }
+  } catch (err) {
+    console.error('Database ready check failed:', err);
+  }
+  next();
+});
+
 // Import API routes
 const authRoutes = require('./routes/auth');
 const psychometricRoutes = require('./routes/psychometric');

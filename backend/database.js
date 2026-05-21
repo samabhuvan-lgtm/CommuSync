@@ -29,15 +29,26 @@ if (process.env.VERCEL) {
   dbPath = path.resolve(__dirname, 'campussync.db');
 }
 
-const db = new sqlite3.Database(dbPath, (err) => {
+let resolveReady;
+const readyPromise = new Promise((resolve) => {
+  resolveReady = resolve;
+});
+
+const db = new sqlite3.Database(dbPath, async (err) => {
   if (err) {
     console.error('Error opening SQLite database:', err.message);
+    resolveReady();
   } else {
     console.log('Connected to the SQLite database at:', dbPath);
     db.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
       if (pragmaErr) console.error('Error enabling foreign keys:', pragmaErr);
     });
-    initializeTables();
+    try {
+      await initializeTables();
+    } catch (initErr) {
+      console.error('Error initializing tables:', initErr);
+    }
+    resolveReady();
   }
 });
 
